@@ -17,7 +17,8 @@ function Map({ start, stops, end }: MapProps) {
     const [driverPosition, setDriverPosition] = useState<LocationProps>();
     const [directionsService, setDirectionsService] = useState<google.maps.DirectionsService>();
     const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer>();
-    const [route, setRoute] = useState(null);
+    const [markerLibrary, setMarkerLibrary] = useState<google.maps.MarkerLibrary>();
+    const [directionLegs, setDirectionLegs] = useState<google.maps.DirectionsLeg[]>();
 
     useEffect(() => {
 
@@ -27,15 +28,20 @@ function Map({ start, stops, end }: MapProps) {
                 const { latitude, longitude } = coords;
 
                 setDriverPosition({ lat: latitude, lng: longitude });
+
             })
         }
+
 
 
     }, []);
 
     useEffect(() => {
-        if (map && directionsService && directionsRenderer) {
+
+        if (map && directionsService && directionsRenderer && markerLibrary) {
             const initRoutes = async () => {
+
+                const { AdvancedMarkerElement } = markerLibrary as google.maps.MarkerLibrary;
 
                 const waypts: google.maps.DirectionsWaypoint[] = [];
 
@@ -53,20 +59,62 @@ function Map({ start, stops, end }: MapProps) {
                     waypoints: waypts,
                 }).then((response) => {
                     directionsRenderer.setDirections(response);
+
+                    const directions = directionsRenderer.getDirections()
+
+                    const legs = directions?.routes[0].legs;
+
+                    for (let i = 0; i < legs!.length - 1; i++) {
+
+                        const wayptMarker = new AdvancedMarkerElement({
+                            map: map,
+                            position: stops[i],
+                            title: "Way point " + i,
+                        });
+
+                        const contentString =
+                            '<div >' +
+                            '<h1 id="firstHeading" class="text-l">Step info</h1>' +
+                            `<p>Distance: ${legs![i].distance?.text}</p>` +
+                            `<p>Duration: ${legs![i].duration?.text}</p>` +
+                            "</div>";
+
+                        const infoWindow = new google.maps.InfoWindow({
+                            ariaLabel: 'Step info',
+                            content: contentString
+                        });
+
+                        wayptMarker.addListener("click", () => {
+                            infoWindow.open({
+                                anchor: wayptMarker,
+                                map,
+                            });
+                        });
+
+                        infoWindow.open({
+                            anchor: wayptMarker,
+                            map,
+                        });
+
+                    }
+
                 });
             };
 
             initRoutes();
         }
 
-    }, [directionsRenderer, directionsService, end, map, start, stops]);
+    }, [directionsRenderer, directionsService, end, map, markerLibrary, start, stops]);
 
     useEffect(() => {
+
         const initMap = async () => {
 
             const { Map } = await loader.importLibrary("maps");
 
-            const { AdvancedMarkerElement, PinElement } = await loader.importLibrary('marker') as google.maps.MarkerLibrary;
+            const MarkerLibrary = await loader.importLibrary('marker') as google.maps.MarkerLibrary;
+
+            setMarkerLibrary(MarkerLibrary);
 
             const position = {
                 lat: -1.93132,
@@ -74,7 +122,7 @@ function Map({ start, stops, end }: MapProps) {
             };
 
             const mapOptions: google.maps.MapOptions = {
-                center: driverPosition ? driverPosition : position,
+                center: position,
                 zoom: 17,
                 mapId: "GOOGLE_MAP_PATH_ID"
             };
@@ -85,18 +133,16 @@ function Map({ start, stops, end }: MapProps) {
 
             const routesLibrary = await loader.importLibrary('routes');
 
-                let directionServiceInstance = new routesLibrary.DirectionsService();
-                let directionsRendererInstance = new routesLibrary.DirectionsRenderer({
-                    map: map,
-                });
+            let directionServiceInstance = new routesLibrary.DirectionsService();
+            let directionsRendererInstance = new routesLibrary.DirectionsRenderer({
+                map: map,
+            });
 
             setDirectionsService(directionServiceInstance);
             setDirectionsRenderer(directionsRendererInstance);
 
-            // Show driver real time location
             if (driverPosition) {
-
-                console.log("driver position", driverPosition);
+                const { AdvancedMarkerElement, PinElement } = MarkerLibrary as google.maps.MarkerLibrary;
 
                 const glyphImg = document.createElement('img');
                 glyphImg.src = '/car.svg';
@@ -113,7 +159,7 @@ function Map({ start, stops, end }: MapProps) {
                 });
 
                 const contentString =
-                    '<div id="content">' +
+                    '<div >' +
                     '<h1 id="firstHeading" class="firstHeading">Driver position</h1>' +
                     "</div>";
 
@@ -121,7 +167,6 @@ function Map({ start, stops, end }: MapProps) {
                     ariaLabel: 'Driver position',
                     content: contentString
                 });
-
 
                 marker.addListener("click", () => {
                     infoWindow.open({
@@ -135,15 +180,13 @@ function Map({ start, stops, end }: MapProps) {
                     map,
                 });
             }
-
-
         }
 
         initMap()
     }, [driverPosition]);
 
     return (
-        <div style={{ height: '600px', width: "600px" }} ref={mapRef} />
+        <div style={{ height: '100%', width: '100%' }} ref={mapRef} />
     );
 }
 
