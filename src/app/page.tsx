@@ -1,4 +1,5 @@
 'use client'
+
 import Map from "@/components/map";
 import Image from "next/image";
 

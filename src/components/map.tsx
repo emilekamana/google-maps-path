@@ -18,7 +18,6 @@ function Map({ start, stops, end }: MapProps) {
     const [directionsService, setDirectionsService] = useState<google.maps.DirectionsService>();
     const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer>();
     const [markerLibrary, setMarkerLibrary] = useState<google.maps.MarkerLibrary>();
-    const [directionLegs, setDirectionLegs] = useState<google.maps.DirectionsLeg[]>();
 
     useEffect(() => {
 
@@ -31,8 +30,6 @@ function Map({ start, stops, end }: MapProps) {
 
             })
         }
-
-
 
     }, []);
 
@@ -124,7 +121,9 @@ function Map({ start, stops, end }: MapProps) {
             const mapOptions: google.maps.MapOptions = {
                 center: position,
                 zoom: 17,
-                mapId: "GOOGLE_MAP_PATH_ID"
+                mapId: "GOOGLE_MAP_PATH_ID",
+                disableDefaultUI: true,
+                zoomControl: true,
             };
 
             const map = new Map(mapRef.current as HTMLDivElement, mapOptions);
@@ -154,7 +153,7 @@ function Map({ start, stops, end }: MapProps) {
                     title: "Driver position",
                     content: new PinElement({
                         glyph: glyphImg,
-                        scale: 1
+                        scale: 1,
                     }).element
                 });
 
