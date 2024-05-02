@@ -27,6 +27,10 @@ export default function Home() {
         </nav>
       </header>
 
+
+      {/* Map usage */}
+
+      
       <main id="content" className="shrink-0 max-w-screen max-h-[90vh] min-h-[90vh] h-[20rem] my-auto mx-auto">
         <Map
           start={{ lat: -1.939826787816454, lng: 30.0445426438232 }}

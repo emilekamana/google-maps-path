@@ -3,22 +3,24 @@
 import React, { useEffect, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 
+// Loading the google maps library
 const loader = new Loader({
     apiKey: process.env.NEXT_PUBLIC_MAPS_API_KEY as string,
     version: 'weekly'
 });
 
 
-function Map({ start, stops, end }: MapProps) {
+function Map({ start, stops, end }: IMap) {
 
     const mapRef = React.useRef<HTMLDivElement>(null)
 
     const [map, setMap] = useState<google.maps.Map>();
-    const [driverPosition, setDriverPosition] = useState<LocationProps>();
+    const [driverPosition, setDriverPosition] = useState<ILocation>();
     const [directionsService, setDirectionsService] = useState<google.maps.DirectionsService>();
     const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer>();
     const [markerLibrary, setMarkerLibrary] = useState<google.maps.MarkerLibrary>();
 
+    // Getting the driver location from the browser
     useEffect(() => {
 
         if ('geolocation' in navigator) {
@@ -40,6 +42,7 @@ function Map({ start, stops, end }: MapProps) {
 
                 const { AdvancedMarkerElement } = markerLibrary as google.maps.MarkerLibrary;
 
+                // Assigning waypoints from the stops provided
                 const waypts: google.maps.DirectionsWaypoint[] = [];
 
                 for (let i = 0; i < stops.length; i++) {
@@ -49,18 +52,23 @@ function Map({ start, stops, end }: MapProps) {
                     });
                 }
 
+                // Calculating routes using the google maps directionsService
                 directionsService.route({
                     destination: end,
                     origin: start,
                     travelMode: google.maps.TravelMode.DRIVING,
                     waypoints: waypts,
                 }).then((response) => {
+                    
+                    // Rendering routes to the map
                     directionsRenderer.setDirections(response);
 
                     const directions = directionsRenderer.getDirections()
 
+                    // Getting the legs/steps to every waypoint
                     const legs = directions?.routes[0].legs;
 
+                    // Creating markers and info windows to display distance and estimated duration info
                     for (let i = 0; i < legs!.length - 1; i++) {
 
                         const wayptMarker = new AdvancedMarkerElement({
@@ -107,6 +115,8 @@ function Map({ start, stops, end }: MapProps) {
 
         const initMap = async () => {
 
+            // Creating the google maps instance
+
             const { Map } = await loader.importLibrary("maps");
 
             const MarkerLibrary = await loader.importLibrary('marker') as google.maps.MarkerLibrary;
@@ -140,6 +150,7 @@ function Map({ start, stops, end }: MapProps) {
             setDirectionsService(directionServiceInstance);
             setDirectionsRenderer(directionsRendererInstance);
 
+            // Add driver location marker and info window to the map
             if (driverPosition) {
                 const { AdvancedMarkerElement, PinElement } = MarkerLibrary as google.maps.MarkerLibrary;
 
@@ -159,7 +170,7 @@ function Map({ start, stops, end }: MapProps) {
 
                 const contentString =
                     '<div >' +
-                    '<h1 id="firstHeading" class="firstHeading">Driver position</h1>' +
+                    '<h1 class="firstHeading">Driver position</h1>' +
                     "</div>";
 
                 const infoWindow = new google.maps.InfoWindow({

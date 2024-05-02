@@ -1,10 +1,12 @@
-interface LocationProps {
+// Location interface for type safety
+interface ILocation {
     lat: number,
     lng: number,
 }
 
-interface MapProps {
-    start: LocationProps;
-    stops: LocationProps[];
-    end: LocationProps;
+// Map interface for type safety
+interface IMap {
+    start: ILocation;
+    stops: ILocation[];
+    end: ILocation;
 };
